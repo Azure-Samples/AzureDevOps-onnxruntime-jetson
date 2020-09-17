@@ -24,7 +24,7 @@ The Keras implementation of YOLOv3 (Tensorflow backend) inspired by [allanzelene
 
 * __Setup you Azure account__: An Azure Account Subscription (with pre-paid credits or billing through existing payment channels) is required for this sample. Create the account in Azure portal using [this tutorial](https://azure.microsoft.com/en-us/free/). Your subscription must have pre-paid credits or bill through existing payment channels. (If you make an account for the first time, you can get 12 months free and $200 in credits to start with.)
 
-* __Devices__ needed for this sample needs atleast _two_ NVIDIA Jetson devices. Read more about the NVIDIA Jetson Nano Developer Kit [here](https://developer.nvidia.com/embedded/learn/get-started-jetson-nano-devkit#intro).
+* __Devices__ needed for this sample needs atleast _two_ NVIDIA Jetson devices. Read more about the NVIDIA Jetson Developer Kit [here](https://www.nvidia.com/en-us/autonomous-machines/jetson-store/).
 
     We will use one of the Jetson devices as the Azure DevOps self-host agent to run the jobs in the DevOps pipeline. This is the _Dev machine_.
     The other Jetson device(s) will be used to deploy the IoT application containers. We will refer to these devices as _Test Device(s)_.
@@ -37,9 +37,9 @@ The Keras implementation of YOLOv3 (Tensorflow backend) inspired by [allanzelene
 
 In this step we will use the Tiny Yolo weight from the original release by Darknet. The training recipe is reused from We will first convert the weights to Keras to training with TensorFlow backend. This model is then training with the VOC dataset in AML. The trained is converted to ONNX to enable us to deploy in different execution environments.
 
-__[Create your Azure Machine Learning Workspace](https://docs.microsoft.com/en-us/azure/machine-learning/how-to-manage-workspace)__. (_You can skip this step if you already have a workspace setup._)
+[Create your Azure Machine Learning Workspace](https://docs.microsoft.com/en-us/azure/machine-learning/how-to-manage-workspace). (_You can skip this step if you already have a workspace setup._)
 
-__[Setup the Jupyter Notebook Environment in Azure Machine Learning Workspace](https://docs.microsoft.com/en-us/azure/machine-learning/how-to-run-jupyter-notebooks)__ to run your Jupyter Notebooks directly in your workspace in AML studio.
+[Setup the Jupyter Notebook Environment in Azure Machine Learning Workspace](https://docs.microsoft.com/en-us/azure/machine-learning/how-to-run-jupyter-notebooks) to run your Jupyter Notebooks directly in your workspace in AML studio.
 
 [Clone this repo to your AML Workspace](https://docs.microsoft.com/en-us/azure/machine-learning/how-to-run-jupyter-notebooks#terminal) to run this training notebook.
 You can use regular `git clone --recursive https://github.com/Azure-Samples/AzureDevOps-onnxrutime-jetson` CLI commands from the Notebook Terminal in AML to clone this repository into a desired folder in your workspace.
@@ -48,21 +48,25 @@ __Get Started to Train__: Open the notebook `Training-keras-yolo3-AML.ipynb` and
 
 ## <a name="S2"></a>2. Packaging Pipeline
 
+In this step we will create the pipeline of steps to build the docker images for the Jetson devices. We will use [Azure DevOps](https://azure.microsoft.com/en-us/solutions/devops/) to create this pipeline.
+
 #### Create a DevOps project
 
 Go to [https://dev.azure.com/](https://dev.azure.com/) and create a new organization and project.
 
-#### Create self-hosted agent
+#### Setup Dev machine
 
-To set your device up as a self-hosted Azure DevOps agent, follow the instructions on this page: https://docs.microsoft.com/en-us/azure/devops/pipelines/agents/v2-linux?view=azure-devops
+The _Dev machine_ is setup to run the jobs for the CI/CD pipeline. Since the test device is a ubuntu/ARM64 platform we will need to build the ARM64 docker images on the host platform with same HW configuration. Another approach is to setup a docker cross-build environment in Azure which is beyond the scope of this tutorial and not fully validated for ARM64 configuration.
 
-#### Install Azure IoT Edge Dev Tool
+##### Azure DevOps Agent
 
-The IoT Edge Dev Tool greatly simplifies Azure IoT Edge development down to simple commands driven by environment variables.
+Install the self-hosted Azure DevOps agent. Follow the instructions on this page: https://docs.microsoft.com/en-us/azure/devops/pipelines/agents/v2-linux?view=azure-devops.
 
-We recommend that you install the tool manually: https://github.com/Azure/iotedgedev/wiki/manual-dev-machine-setup
+##### Install Azure IoT Edge Dev Tool
 
-#### Install core AzureML SDK for Python
+The IoT Edge Dev Tool greatly simplifies Azure IoT Edge development down to simple commands driven by environment variables. We recommend that you install the tool manually on the ARM64: https://github.com/Azure/iotedgedev/wiki/manual-dev-machine-setup
+
+##### Install core AzureML SDK for Python
 
 We will use the AzureML SDK for Python to download the model to the DevOps agent.
 
@@ -79,48 +83,40 @@ pip install -U pip
 pip install azureml-core
 ```
 
+#### Config for AzureML workspace
 
-## <a name="S3"></a>3. Deployment
+> You can skip this step if you already have the configuration details for the AzureML workspace.
 
+Note the configuration details of your AML Workspace: `config.json`
 
-
-
-
-## Create AzureML workspace
-
-> You can skip this step if you already have a workspace where you registered the tiny yolo model
-
-To create an AzureML workspace, you can use the script `aml/model_registration.py`.  This script will create the workspace and register add the model `model_data/TinyYolo.onnx` in the AzureML model registry.
-
-However, before you run the script, create a file `aml/config.json` with the configuration for your workspace.  Fill in `workspace_name`, `resource_gp`, `subscription_id`, and `location`.  We will fill in the last three items later.
-
-You can use this as a template:
 ```
-{
-    "subscription_id": "subscription_id",
-    "resource_group": "resource_group",
-    "workspace_name": "workspace_name",
-    "workspace_region": "workspace_region",
-    "service_principal_id": "service_principal_id",
-    "service_principal_password": "service_principal_password",
-    "tenant_id": "tenant_id"
-}
+    {
+        "subscription_id": "subscription_id",
+        "resource_group": "resource_group",
+        "workspace_name": "workspace_name",
+        "workspace_region": "workspace_region",
+        "service_principal_id": "service_principal_id",
+        "service_principal_password": "service_principal_password",
+        "tenant_id": "tenant_id"
+    }
 ```
 
-**Note:** You should execute this script locally or on a VM, after you installed the AzureML SDK for Python (e.g. `pip install azureml-core`).
+#### Create Service Principal
 
+Service Principal enables non-interactive authentication for any specific user login. This is useful for setting up a machine learning workflow as an automated process.
 
-## Create Service Principal for non-interactive authentication.
+> Note that you must have administrator privileges over the Azure subscription to complete these steps.
 
+```
 Follow the instructions of section "Service Principal Authentication" in [this notebook](https://github.com/Azure/MachineLearningNotebooks/blob/master/how-to-use-azureml/manage-azureml-service/authentication-in-azureml/authentication-in-azureml.ipynb). 
 
 > We recommend to scope the Service Principal to the Resource Group.
 
-**Note:** Add `service_principal_id`, `service_principal_password`, and `tenant_id` to the `config.json` file above.  You can then upload the `config.json` file to the secure file libary of your DevOps project. Make sure to enable all pipelines to have access to the secure file.
+**Note:** Add `service_principal_id`, `service_principal_password`, and `tenant_id` to the `config.json` file above. You can then upload the `config.json` file to the secure file libary of your DevOps project. Make sure to enable all pipelines to have access to the secure file.
+```
 
-## Add config.json to library of secure files
-
-In your Azure DevOps project, click on the rocket icon on the left, then the library. In your library go to *secure files* and *+ Secure File*. Upload your file and make sure that you allow all pipelines to use it.
+Add config.json to library of secure files in the Azure DevOps project. Select on the rocket icon on the left, then the library. In your library go to *secure files* and *+ Secure File*. Upload your file and make sure that you allow all pipelines to use it.
+<p align="center"><img width="100%" src="media/ado_lib.png" alt="Library in Azure DevOps project"/></p>
 
 
 ## Add Service Connections to your DevOps project
@@ -199,6 +195,11 @@ The last step is deploy the modules to the Edge device.
 Now you can run `aml/model_registration.py` again. This should trigger a run of this release pipeline.  
 
 *Note*: Make sure you clicked on the lightning Icon (continuous deployment trigger) on the `Artifact` `_TinyYOLO`, to make sure that the release pipeline is triggered when you register a new model in the Model Registry.
+
+## <a name="S3"></a>3. Deployment
+
+
+
 
 ==============================
 ## Contribution
