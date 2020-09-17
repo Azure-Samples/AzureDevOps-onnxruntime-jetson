@@ -117,7 +117,7 @@ We recommend to scope the Service Principal to the Resource Group.
 
 Add config.json to library of secure files in the Azure DevOps project. Select on the rocket icon on the left, then the library. In your library go to *secure files* and *+ Secure File*. Upload your file and make sure that you allow all pipelines to use it.
 
-<p align="left"><img width="100%" src="media/ado_lib.png" alt="Library in Azure DevOps project"/></p>
+<p align="left"><img width="50%" src="media/ado_lib.png" alt="Library in Azure DevOps project"/></p>
 
 
 #### Add Service Connections to your DevOps project
@@ -129,7 +129,7 @@ Go to the settings of your project, `Service Connections` and click on `New Serv
 - Create one Service Connection of type `GitHub`.
 - Create one of type `Azure Resource Manager`, using the Service Principal Connection credentials from above.
 
-<p align="left"><img width="100%" src="media/ado_settings.png" alt="Settings to add a new Service Connection"/></p>
+<p align="left"><img width="50%" src="media/ado_settings.png" alt="Settings to add a new Service Connection"/></p>
 
 #### Install MLOps extension for Azure DevOps
 
