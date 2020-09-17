@@ -107,13 +107,13 @@ Service Principal enables non-interactive authentication for any specific user l
 
 > Note that you must have administrator privileges over the Azure subscription to complete these steps.
 
-````
+```
 Follow the instructions of section "Service Principal Authentication" in [this notebook](https://github.com/Azure/MachineLearningNotebooks/blob/master/how-to-use-azureml/manage-azureml-service/authentication-in-azureml/authentication-in-azureml.ipynb).
 
 We recommend to scope the Service Principal to the Resource Group.
 
 **Note:** Add `service_principal_id`, `service_principal_password`, and `tenant_id` to the `config.json` file above. You can then upload the `config.json` file to the secure file libary of your DevOps project. Make sure to enable all pipelines to have access to the secure file.
-````
+```
 
 Add config.json to library of secure files in the Azure DevOps project. Select on the rocket icon on the left, then the library. In your library go to *secure files* and *+ Secure File*. Upload your file and make sure that you allow all pipelines to use it.
 
