@@ -10,11 +10,15 @@ products:
 
 # Azure DevOps Pipeline with ONNX Runtime
 
-This sample will setup a pipeline to train, package and deploy Machine Learning models in IoT Edge Devices. There are three phases in this pipeline. (1) __Training__ the Tiny Yolo v3 model in Azure Machine Learning and converting it to ONNX. (2) __Packaging Pipeline__ to create the CI/CD steps to create docker image for the NVIDIA Jetson device with the application code and the ONNX model. (3) __Deploying__ the docker images on the target device using Azure IoT Edge. All these steps are automated in a DevOps pipeline using Azure DevOps.
+This sample will setup a pipeline to train, package and deploy Machine Learning models in IoT Edge Devices. There are two phases in this pipeline.
 
-Specifically, we will cover:
-* How to set up a NVIDIA Jetson Nano as a Linux self-hosted DevOps agent, for building our Edge solution.
-* How to trigger a release pipeline, when a newly trained model is registered in the AzureML model registry.
+1. __Training on AzureML__ - Train the Tiny Yolo v3 model in Azure Machine Learning and converting it to ONNX.
+2. __Continuous Deployment__ - Build Docker container images and deploy to NVIDIA jetson devices on Azure IoT Edge. 
+
+Specifically, you will learn how to:
+* Train a Tiny Yolo v3 model using AzureML
+* Set up a NVIDIA Jetson Nano as a Linux self-hosted DevOps agent, for building our Edge solution.
+* Trigger a release pipeline, when a newly trained model is registered in the AzureML model registry, for continuous deployment.
 
 ### Acknowledgements
 
@@ -24,18 +28,20 @@ The Keras implementation of YOLOv3 (Tensorflow backend) inspired by [allanzelene
 
 * __Setup you Azure account__: An Azure Account Subscription (with pre-paid credits or billing through existing payment channels) is required for this sample. Create the account in Azure portal using [this tutorial](https://azure.microsoft.com/en-us/free/). Your subscription must have pre-paid credits or bill through existing payment channels. (If you make an account for the first time, you can get 12 months free and $200 in credits to start with.)
 
-* __Devices__ needed for this sample needs atleast _two_ NVIDIA Jetson devices. Read more about the NVIDIA Jetson Developer Kit [here](https://www.nvidia.com/en-us/autonomous-machines/jetson-store/).
+* __Devices__ needed for this sample need atleast _two_ NVIDIA Jetson devices. Read more about the NVIDIA Jetson Developer Kit [here](https://www.nvidia.com/en-us/autonomous-machines/jetson-store/).
 
     We will use one of the Jetson devices as the Azure DevOps self-host agent to run the jobs in the DevOps pipeline. This is the _Dev machine_.
     The other Jetson device(s) will be used to deploy the IoT application containers. We will refer to these devices as _Test Device(s)_.
 
     > Note: If you are ordering these devices, we recommend you get power adapters (rather than relying on USB as a power source) and a wireless antenna (unless you are fine with using ethernet).
 
+    > Note: If you don't have a NVIDIA Jetson device, this sample will provide a demonstration for how to train a yolo v3 model using AzureML.  For deployment, you could switch deployment platform from arm to amd64, to e.g. deploy to your workstation for testing.
+
 * Before you try to create a DevOps release pipeline, we recommend that you familiarize yourself with [this](https://github.com/wmpauli/onnxruntime-iot-edge/blob/master/README-ONNXRUNTIME-arm64.md) easy to use getting started sample to deploy a ML model manually to an IoT Edge device like the Jetson device.
 
 ## <a name="S1"></a>1. Train On AzureML
 
-In this step we will use the Tiny Yolo weight from the original release by Darknet. The training recipe is reused from We will first convert the weights to Keras to training with TensorFlow backend. This model is then training with the VOC dataset in AML. The trained is converted to ONNX to enable us to deploy in different execution environments.
+In this step we will use weights for Tiny Yolo v3 from the original release by Darknet. This allows us to perform fine-tuning of a model that has already been trained on another dataset, rather than training the model from scratch. We will first convert the weights to Keras to training with TensorFlow backend. After converting the weights to Keras format (h5 extension), we can then fine-tune the model on the VOC. After training, trained model is converted to ONNX to enable us to deploy in different execution environments.
 
 [Create your Azure Machine Learning Workspace](https://docs.microsoft.com/en-us/azure/machine-learning/how-to-manage-workspace). (_You can skip this step if you already have a workspace setup._)
 
@@ -46,7 +52,9 @@ You can use regular `git clone --recursive https://github.com/Azure-Samples/Azur
 
 __Get Started to Train__: Open the notebook `Training-keras-yolo3-AML.ipynb` and start executing the cells to train the Tiny Yolo model. 
 
-## <a name="S2"></a>2. Packaging Pipeline
+## <a name="S2"></a>2. Release Pipeline
+
+### Setup your Azure DevOps project for continuous deployment
 
 In this step we will create the pipeline of steps to build the docker images for the Jetson devices. We will use [Azure DevOps](https://azure.microsoft.com/en-us/solutions/devops/) to create this pipeline.
 
@@ -83,11 +91,20 @@ pip install -U pip
 pip install azureml-core
 ```
 
+#### Create Service Principal
+
+Service Principal enables non-interactive authentication for any specific user login. This is useful for setting up a machine learning workflow as an automated process.
+
+> Note that you must have administrator privileges over the Azure subscription to complete these steps.
+
+Follow the instructions from the section __Service Principal Authentication__ in [this notebook](https://github.com/Azure/MachineLearningNotebooks/blob/master/how-to-use-azureml/manage-azureml-service/authentication-in-azureml/authentication-in-azureml.ipynb) to create a service principal for your project. We recommend to scope the Service Principal to the _Resource Group_.
+
+<p align="left"><img width="50%" src="media/ado_lib.png" alt="Library in Azure DevOps project"/></p>
+
 #### Config for AzureML workspace
 
-> You can skip this step if you already have the configuration details for the AzureML workspace.
+Note the configuration details of your AML Workspace in a `config.json` file. This file will later be needed for your Release Pipeline to ahve access to your AzureML workspace.  You can find most of the info in the Azure Portal.
 
-Note the configuration details of your AML Workspace in a `config.json` file. This file will be needed to setup the **Service Principal** for the project in the next step.
 
 ```
     {
@@ -101,20 +118,9 @@ Note the configuration details of your AML Workspace in a `config.json` file. Th
     }
 ```
 
-#### Create Service Principal
-
-Service Principal enables non-interactive authentication for any specific user login. This is useful for setting up a machine learning workflow as an automated process.
-
-> Note that you must have administrator privileges over the Azure subscription to complete these steps.
-
-Follow the instructions from the section __Service Principal Authentication__ in [this notebook](https://github.com/Azure/MachineLearningNotebooks/blob/master/how-to-use-azureml/manage-azureml-service/authentication-in-azureml/authentication-in-azureml.ipynb) to create a service principal for your project. We recommend to scope the Service Principal to the _Resource Group_.
-
 > **Important:** Add `service_principal_id`, `service_principal_password`, and `tenant_id` to the `config.json` file above. You can then upload the `config.json` file to the secure file libary of your DevOps project. Make sure to enable all pipelines to have access to the secure file.
 
 Add `config.json` to Library of secure files in the Azure DevOps project. Select on the Pipelines icon on the left, then Library. In your library go to *Secure files* and *+ Secure File*. Upload the `config.json` file and make sure to allow all pipelines to use it.
-
-<p align="left"><img width="50%" src="media/ado_lib.png" alt="Library in Azure DevOps project"/></p>
-
 
 #### Add Service Connections to your DevOps project
 
@@ -131,7 +137,7 @@ Go to the settings of your project, `Service Connections` and click on `New Serv
 
 You can install the MLOps extension from here: [https://marketplace.visualstudio.com/items?itemName=ms-air-aiagility.vss-services-azureml](https://marketplace.visualstudio.com/items?itemName=ms-air-aiagility.vss-services-azureml).
 
-#### Create Release Pipeline
+### Create Release Pipeline
 
 Now we can build the Release pipeline for the project by selecting __Create Pipeline__ under _Pipelines_ in the Azure DevOps project. 
 
