@@ -1,4 +1,3 @@
 {
-    "ai.azureml.defaultWorkspaceId": "/subscriptions/15ae9cb6-95c1-483d-a0e3-b1a1a3b06324/resourceGroups/aifxdemo/providers/Microsoft.MachineLearningServices/workspaces/orttrainingdemo",
-    "python.dataScience.jupyterServerURI": "https://remote/?id=azureml_compute_instances&uriHandle=/subscriptions/15ae9cb6-95c1-483d-a0e3-b1a1a3b06324/resourceGroups/aifxdemo/providers/Microsoft.MachineLearningServices/workspaces/orttrainingdemo/computes/bert-pretraining"
+
 }
