@@ -87,7 +87,7 @@ pip install azureml-core
 
 > You can skip this step if you already have the configuration details for the AzureML workspace.
 
-Note the configuration details of your AML Workspace: `config.json`
+Note the configuration details of your AML Workspace in a `config.json` file. This file will be needed to setup the **Service Principal** for the project in the next step.
 
 ```
     {
@@ -107,13 +107,11 @@ Service Principal enables non-interactive authentication for any specific user l
 
 > Note that you must have administrator privileges over the Azure subscription to complete these steps.
 
-    Follow the instructions from the section __Service Principal Authentication__ in [this notebook](https://github.com/Azure/MachineLearningNotebooks/blob/master/how-to-use-azureml/manage-azureml-service/authentication-in-azureml/authentication-in-azureml.ipynb) to create a service principal for your project.
-
-    We recommend to scope the Service Principal to the _Resource Group_.
+Follow the instructions from the section __Service Principal Authentication__ in [this notebook](https://github.com/Azure/MachineLearningNotebooks/blob/master/how-to-use-azureml/manage-azureml-service/authentication-in-azureml/authentication-in-azureml.ipynb) to create a service principal for your project. We recommend to scope the Service Principal to the _Resource Group_.
 
 > **Note:** Add `service_principal_id`, `service_principal_password`, and `tenant_id` to the `config.json` file above. You can then upload the `config.json` file to the secure file libary of your DevOps project. Make sure to enable all pipelines to have access to the secure file.
 
-Add config.json to library of secure files in the Azure DevOps project. Select on the rocket icon on the left, then the library. In your library go to *secure files* and *+ Secure File*. Upload your file and make sure that you allow all pipelines to use it.
+Add `config.json` to Library of secure files in the Azure DevOps project. Select on the Pipelines icon on the left, then Library. In your library go to *Secure files* and *+ Secure File*. Upload the `config.json` file and make sure to allow all pipelines to use it.
 
 <p align="left"><img width="50%" src="media/ado_lib.png" alt="Library in Azure DevOps project"/></p>
 
@@ -136,8 +134,7 @@ You can install the MLOps extension from here: [https://marketplace.visualstudio
 #### Create Release Pipeline
 
 Now we can build the Release pipeline. The final pipeline should look like this:
-
-![schematic pipeline](./media/pipeline.png)
+<p align="left"><img width="50%" src="./media/pipeline.png" alt="schematic pipeline"/></p>
 
 #### Connect Artifacts
 
@@ -145,40 +142,34 @@ The pipeline is connected to two `Artifacts`, your fork of our GitHub repository
 
 
 If the pipeline is triggered, it will execute the tasks in `Stage 1`:
-
-![tasks of stage 1](./media/stage_1.png)
+<p align="left"><img width="50%" src="./media/stage_1.png" alt="tasks of stage 1"/></p>
 
 Let's go through the steps indivually
 
 #### Download Secure file
+<p align="left"><img width="50%" src="./media/01_download_secure_file.png" alt="download secure file"/></p>
 
-![01_download_secure_file.png](./media/01_download_secure_file.png)
-
-We called our file `wopauli_onnx_config.json`. Feel free to give it a different name. It helps to add some kind of identifier, in case you have other release pipelines that work with other AzureML Workspaces or Service Principals.
+This is the `config.json` from the Secure Library of our DevOps project. We called our file `wopauli_onnx_config.json` in this example. Feel free to give it a different name. It helps to add some kind of identifier, in case you have other release pipelines that work with other AzureML Workspaces or Service Principals.
 
 #### Copy Secure file
-
-![02_copy_secure_file.png](./media/02_copy_secure_file.png)
+<p align="left"><img width="50%" src="./media/02_copy_secure_file.png" alt="Copy the secure file"/></p>
 
 We copy the file from the Agent.TempDirectory into the aml folder below the root of the cloned code repository (`cp $(Agent.TempDirectory)/wopauli_onnx_config.json ./_wmpauli_onnxruntime-iot-edge/aml/config.json`).
 
 > `Agent.TempDirectory` is a predefined variable. Check out what other predefined variables exist: [https://docs.microsoft.com/en-us/azure/devops/pipelines/build/variables](https://docs.microsoft.com/en-us/azure/devops/pipelines/build/variables)
 
 #### Download Model from AzureML Model Registry
-
-![03_python_script.png](./media/03_python_script.png)
+<p align="left"><img width="50%" src="./media/03_python_script.png" alt="Python scripts to download trained model from AML"/></p>
 
 We use the AzureML SDK for Python to download the latest model from the Model Registry (`$(System.DefaultWorkingDirectory)/_wmpauli_onnxruntime-iot-edge/aml/download_model.py`)
 
 #### Build Modules
-
-![04_build_modules.png](./media/04_build_modules.png)
+<p align="left"><img width="50%" src="./media/04_build_modules.png" alt="Build docker images for the application containers"/></p>
 
 We build the modules (docker images) of our solution.  Make sure you point it to the correct `deployment.template.json` file, and pick the correct `Default platform`, and `Action`.
 
 #### Push Modules to ACR
-
-![05_push_modules.png](./media/05_push_modules.png)
+<p align="left"><img width="50%" src="./media/05_push_modules.png" alt="Push the docker images to ACR"/></p>
 
 The next step is to push the modules to the container registry.
 
@@ -188,8 +179,7 @@ You can use the Azure Container Registry that was create along your Workspace ab
 
 
 #### Deploy to Edge Device
-
-![06_deploy.png](./media/06_deploy.png)
+<p align="left"><img width="50%" src="./media/06_deploy.png" alt="Deploy the module"/></p>
 
 The last step is deploy the modules to the Edge device.
 
