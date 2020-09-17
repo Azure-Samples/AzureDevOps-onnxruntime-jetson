@@ -1,3 +1,9 @@
+# Licensed under the MIT license. See LICENSE file in the project root for
+# full license information.
+#
+# This file is modified from the original in qqwweee/keras-yolo3 repo
+
+
 import xml.etree.ElementTree as ET
 from os import getcwd
 
