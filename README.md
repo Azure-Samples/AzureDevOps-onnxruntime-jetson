@@ -10,7 +10,7 @@ products:
 
 # Azure DevOps Pipeline with ONNX Runtime
 
-This sample will setup a pipeline to train, package and deploy Machine Learning models in IoT Edge Devices. There are three phases in this pipeline. (1) __Training__ the Tiny Yolo v3 model in Azure Machine Learning and converting it to ONNX. (2) __Packaging__ the ONNX model and the application code in a docker image for the NVIDIA Jetson Nano device. (3) __Deploying__ the docker images on the target device using Azure IoT Edge. All these steps are automated in a DevOps pipeline using Azure DevOps.
+This sample will setup a pipeline to train, package and deploy Machine Learning models in IoT Edge Devices. There are three phases in this pipeline. (1) __Training__ the Tiny Yolo v3 model in Azure Machine Learning and converting it to ONNX. (2) __Packaging Pipeline__ to create the CI/CD steps to create docker image for the NVIDIA Jetson device with the application code and the ONNX model. (3) __Deploying__ the docker images on the target device using Azure IoT Edge. All these steps are automated in a DevOps pipeline using Azure DevOps.
 
 Specifically, we will cover:
 * How to set up a NVIDIA Jetson Nano as a Linux self-hosted DevOps agent, for building our Edge solution.
@@ -24,67 +24,45 @@ The Keras implementation of YOLOv3 (Tensorflow backend) inspired by [allanzelene
 
 * __Setup you Azure account__: An Azure Account Subscription (with pre-paid credits or billing through existing payment channels) is required for this sample. Create the account in Azure portal using [this tutorial](https://azure.microsoft.com/en-us/free/). Your subscription must have pre-paid credits or bill through existing payment channels. (If you make an account for the first time, you can get 12 months free and $200 in credits to start with.)
 
-* __Devices__ needed for this sample includes a development system and atleast _two_ NVIDIA Jetson devices. We will use one of the Jetson devices as the Azure DevOps self-host agent to run the jobs in the DevOps pipeline. This is the __Dev machine__. The other Jetson device(s) will be used to deploy the IoT application containers. We will refer to these devices as __Test Device(s)__.
+* __Devices__ needed for this sample needs atleast _two_ NVIDIA Jetson devices. Read more about the NVIDIA Jetson Nano Developer Kit [here](https://developer.nvidia.com/embedded/learn/get-started-jetson-nano-devkit#intro).
+
+    We will use one of the Jetson devices as the Azure DevOps self-host agent to run the jobs in the DevOps pipeline. This is the _Dev machine_.
+    The other Jetson device(s) will be used to deploy the IoT application containers. We will refer to these devices as _Test Device(s)_.
+
+    > Note: If you are ordering these devices, we recommend you get power adapters (rather than relying on USB as a power source) and a wireless antenna (unless you are fine with using ethernet).
 
 * Before you try to create a DevOps release pipeline, we recommend that you familiarize yourself with [this](https://github.com/wmpauli/onnxruntime-iot-edge/blob/master/README-ONNXRUNTIME-arm64.md) easy to use getting started sample to deploy a ML model manually to an IoT Edge device like the Jetson device.
 
-## 1. Train On AzureML
+## <a name="S1"></a>1. Train On AzureML
 
 In this step we will use the Tiny Yolo weight from the original release by Darknet. The training recipe is reused from We will first convert the weights to Keras to training with TensorFlow backend. This model is then training with the VOC dataset in AML. The trained is converted to ONNX to enable us to deploy in different execution environments.
 
-__[Setup the Jupyter Notebook Environment in Azure Machine Learning Workspace](https://docs.microsoft.com/en-us/azure/machine-learning/how-to-run-jupyter-notebooks)__.
+__[Create your Azure Machine Learning Workspace](https://docs.microsoft.com/en-us/azure/machine-learning/how-to-manage-workspace)__. (_You can skip this step if you already have a workspace setup._)
 
-[Clone this repo to your AML Workspace] (https://docs.microsoft.com/en-us/azure/machine-learning/how-to-run-jupyter-notebooks#terminal) to run this training notebook.
+__[Setup the Jupyter Notebook Environment in Azure Machine Learning Workspace](https://docs.microsoft.com/en-us/azure/machine-learning/how-to-run-jupyter-notebooks)__ to run your Jupyter Notebooks directly in your workspace in AML studio.
+
+[Clone this repo to your AML Workspace](https://docs.microsoft.com/en-us/azure/machine-learning/how-to-run-jupyter-notebooks#terminal) to run this training notebook.
 You can use regular `git clone --recursive https://github.com/Azure-Samples/AzureDevOps-onnxrutime-jetson` CLI commands from the Notebook Terminal in AML to clone this repository into a desired folder in your workspace.
 
 __Get Started to Train__: Open the notebook `Training-keras-yolo3-AML.ipynb` and start executing the cells to train the Tiny Yolo model. 
 
-## 2. 
+## <a name="S2"></a>2. Packaging Pipeline
 
-
-# Introduction 
-
-
-Specifically, we will cover:
-- How to set up a NVIDIA Jetson Nano as a Linux self-hosted DevOps agent, for building our Edge solution.
-- How to trigger a release pipeline, when a newly trained model is registered in the AzureML model registry.
-
-
-# Prerequisites
-
-## Getting Started
-
-
-## Jetson Nano Developer Kit
-
-In this tutorial we used two NVIDIA Jetson devices:
-1. Jetson Nano as a DevOps agent (i.e. for building the Docker images)
-1. Jetson TX2 as a deployment target
-
-You should get on Jetson device, so that you can setup the release pipeline.
-
-Read more about the NVIDIA Jetson Nano Developer Kit [here](https://developer.nvidia.com/embedded/learn/get-started-jetson-nano-devkit#intro).
-
-> Note: If you are ordering one of these devices, we recommend you get a power adapter (rather than relying on USB as a power source) and a wireless antenna (unless you are fine with using ethernet).
-
-
-## Create a DevOps project
+#### Create a DevOps project
 
 Go to [https://dev.azure.com/](https://dev.azure.com/) and create a new organization and project.
 
-## Create self-hosted agent
+#### Create self-hosted agent
 
 To set your device up as a self-hosted Azure DevOps agent, follow the instructions on this page: https://docs.microsoft.com/en-us/azure/devops/pipelines/agents/v2-linux?view=azure-devops
 
-
-## Install Azure IoT Edge Dev Tool
+#### Install Azure IoT Edge Dev Tool
 
 The IoT Edge Dev Tool greatly simplifies Azure IoT Edge development down to simple commands driven by environment variables.
 
 We recommend that you install the tool manually: https://github.com/Azure/iotedgedev/wiki/manual-dev-machine-setup
 
-
-## Install core AzureML SDK for Python
+#### Install core AzureML SDK for Python
 
 We will use the AzureML SDK for Python to download the model to the DevOps agent.
 
@@ -100,6 +78,13 @@ conda activate onnx
 pip install -U pip
 pip install azureml-core
 ```
+
+
+## <a name="S3"></a>3. Deployment
+
+
+
+
 
 ## Create AzureML workspace
 
@@ -216,7 +201,7 @@ Now you can run `aml/model_registration.py` again. This should trigger a run of 
 *Note*: Make sure you clicked on the lightning Icon (continuous deployment trigger) on the `Artifact` `_TinyYOLO`, to make sure that the release pipeline is triggered when you register a new model in the Model Registry.
 
 ==============================
-#### Contribution
+## Contribution
 
 This project welcomes contributions and suggestions. Most contributions require you to
 agree to a Contributor License Agreement (CLA) declaring that you have the right to,
