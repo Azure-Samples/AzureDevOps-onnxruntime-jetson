@@ -10,80 +10,258 @@ products:
 
 # Azure DevOps Pipeline with ONNX Runtime
 
-This sample will setup a pipeline to training, package and deploy the Tiny Yolo model in a IoT Edge device. There are three phases in this pipeline. (1) __Training__ the Tiny Yolo v3 model in Azure Machine Learning and converting it to ONNX. (2) __Packaging__ the ONNX model and the application code in a docker image for the NVIDIA Jetson Nano device. (3) __Deploying__ the docker images on the target device using Azure IoT Edge. All these steps are automated in a DevOps pipeline using Azure DevOps.
+This sample will setup a pipeline to train, package and deploy Machine Learning models in IoT Edge Devices. There are three phases in this pipeline. (1) __Training__ the Tiny Yolo v3 model in Azure Machine Learning and converting it to ONNX. (2) __Packaging__ the ONNX model and the application code in a docker image for the NVIDIA Jetson Nano device. (3) __Deploying__ the docker images on the target device using Azure IoT Edge. All these steps are automated in a DevOps pipeline using Azure DevOps.
 
-## Setup Steps to Train the Model in Azure Machine Learning
+Specifically, we will cover:
+* How to set up a NVIDIA Jetson Nano as a Linux self-hosted DevOps agent, for building our Edge solution.
+* How to trigger a release pipeline, when a newly trained model is registered in the AzureML model registry.
 
-### An Azure Account Subscription (with pre-paid credits or billing through existing payment channels)
+### Acknowledgements
 
-Set up the account in Azure portal using [this tutorial](https://azure.microsoft.com/en-us/free/). 
-* Your subscription must have pre-paid credits or bill through existing payment channels. (If you make an account for the first time, you can get 12 months free and $200 in credits to start with.)
+The Keras implementation of YOLOv3 (Tensorflow backend) inspired by [allanzelener/YAD2K](https://github.com/allanzelener/YAD2K). This sample reuses the recipes from the [qqwweee/keras-yolo3] (https://github.com/qqwweee/keras-yolo3) repo to train a keras-yolo3 model on the VOC Pascal dataset, using [AzureML](https://azure.microsoft.com/en-us/services/machine-learning/). If you are familiar with the original repository, you may want to jump right to section `Train On AzureML` below.
 
-### [Setup the Jupyter Notebook Environment in Azure Machine Learning Workspace](https://docs.microsoft.com/en-us/azure/machine-learning/how-to-run-jupyter-notebooks) to run this tutorial notebook.
+### A few things before you get started:
 
-### [Clone this repo to your AML Workspace] (https://docs.microsoft.com/en-us/azure/machine-learning/how-to-run-jupyter-notebooks#terminal)
-From the Notebook VM launch the Jupyter web interface as descriped in step #3 above. Click New -> Terminal on the upper right corner of the web interface. You will get a new browser tab with the bash prompt. 
-You can use regular `git clone --recursive https://github.com/Azure-Samples/AzureDevOps-onnxrutime-jetson` command line commands to clone this repository into a desired folder.
+* __Setup you Azure account__: An Azure Account Subscription (with pre-paid credits or billing through existing payment channels) is required for this sample. Create the account in Azure portal using [this tutorial](https://azure.microsoft.com/en-us/free/). Your subscription must have pre-paid credits or bill through existing payment channels. (If you make an account for the first time, you can get 12 months free and $200 in credits to start with.)
 
-## Get Started
-Open the notebook `Training-keras-yolo3-AML.ipynb` and start executing the cells. 
+* __Devices__ needed for this sample includes a development system and atleast _two_ NVIDIA Jetson devices. We will use one of the Jetson devices as the Azure DevOps self-host agent to run the jobs in the DevOps pipeline. This is the __Dev machine__. The other Jetson device(s) will be used to deploy the IoT application containers. We will refer to these devices as __Test Device(s)__.
 
-==============================
+* Before you try to create a DevOps release pipeline, we recommend that you familiarize yourself with [this](https://github.com/wmpauli/onnxruntime-iot-edge/blob/master/README-ONNXRUNTIME-arm64.md) easy to use getting started sample to deploy a ML model manually to an IoT Edge device like the Jetson device.
 
-# Project Name
+## 1. Train On AzureML
 
-(short, 1-3 sentenced, description of the project)
+In this step we will use the Tiny Yolo weight from the original release by Darknet. The training recipe is reused from We will first convert the weights to Keras to training with TensorFlow backend. This model is then training with the VOC dataset in AML. The trained is converted to ONNX to enable us to deploy in different execution environments.
 
-## Features
+__[Setup the Jupyter Notebook Environment in Azure Machine Learning Workspace](https://docs.microsoft.com/en-us/azure/machine-learning/how-to-run-jupyter-notebooks)__.
 
-This project framework provides the following features:
+[Clone this repo to your AML Workspace] (https://docs.microsoft.com/en-us/azure/machine-learning/how-to-run-jupyter-notebooks#terminal) to run this training notebook.
+You can use regular `git clone --recursive https://github.com/Azure-Samples/AzureDevOps-onnxrutime-jetson` CLI commands from the Notebook Terminal in AML to clone this repository into a desired folder in your workspace.
 
-* Feature 1
-* Feature 2
-* ...
+__Get Started to Train__: Open the notebook `Training-keras-yolo3-AML.ipynb` and start executing the cells to train the Tiny Yolo model. 
+
+## 2. 
+
+
+# Introduction 
+
+
+Specifically, we will cover:
+- How to set up a NVIDIA Jetson Nano as a Linux self-hosted DevOps agent, for building our Edge solution.
+- How to trigger a release pipeline, when a newly trained model is registered in the AzureML model registry.
+
+
+# Prerequisites
 
 ## Getting Started
 
-### Prerequisites
 
-(ideally very short, if any)
+## Jetson Nano Developer Kit
 
-- OS
-- Library version
-- ...
+In this tutorial we used two NVIDIA Jetson devices:
+1. Jetson Nano as a DevOps agent (i.e. for building the Docker images)
+1. Jetson TX2 as a deployment target
 
-### Installation
+You should get on Jetson device, so that you can setup the release pipeline.
 
-(ideally very short)
+Read more about the NVIDIA Jetson Nano Developer Kit [here](https://developer.nvidia.com/embedded/learn/get-started-jetson-nano-devkit#intro).
 
-- npm install [package name]
-- mvn install
-- ...
-
-### Quickstart
-(Add steps to get up and running quickly)
-
-1. git clone [repository clone url]
-2. cd [respository name]
-3. ...
+> Note: If you are ordering one of these devices, we recommend you get a power adapter (rather than relying on USB as a power source) and a wireless antenna (unless you are fine with using ethernet).
 
 
-## Demo
+## Create a DevOps project
 
-A demo app is included to show how to use the project.
+Go to [https://dev.azure.com/](https://dev.azure.com/) and create a new organization and project.
 
-To run the demo, follow these steps:
+## Create self-hosted agent
 
-(Add steps to start up the demo)
+To set your device up as a self-hosted Azure DevOps agent, follow the instructions on this page: https://docs.microsoft.com/en-us/azure/devops/pipelines/agents/v2-linux?view=azure-devops
 
-1.
-2.
-3.
 
-## Resources
+## Install Azure IoT Edge Dev Tool
 
-(Any additional resources or related projects)
+The IoT Edge Dev Tool greatly simplifies Azure IoT Edge development down to simple commands driven by environment variables.
 
-- Link to supporting information
-- Link to similar sample
-- ...
+We recommend that you install the tool manually: https://github.com/Azure/iotedgedev/wiki/manual-dev-machine-setup
+
+
+## Install core AzureML SDK for Python
+
+We will use the AzureML SDK for Python to download the model to the DevOps agent.
+
+You are welcome to just install the SDK system wide. Alternatively, you might want to install it inside a Conda environment - for easier housekeeping.
+
+Because there is no official release of Anaconda/Miniconda for ARM64 devices, we recommend that you use [Archiconda](https://github.com/Archiconda/build-tools/releases).
+
+Then, you can install the SDK like so:
+
+```
+conda create -n onnx python=3.7
+conda activate onnx
+pip install -U pip
+pip install azureml-core
+```
+
+## Create AzureML workspace
+
+> You can skip this step if you already have a workspace where you registered the tiny yolo model
+
+To create an AzureML workspace, you can use the script `aml/model_registration.py`.  This script will create the workspace and register add the model `model_data/TinyYolo.onnx` in the AzureML model registry.
+
+However, before you run the script, create a file `aml/config.json` with the configuration for your workspace.  Fill in `workspace_name`, `resource_gp`, `subscription_id`, and `location`.  We will fill in the last three items later.
+
+You can use this as a template:
+```
+{
+    "subscription_id": "subscription_id",
+    "resource_group": "resource_group",
+    "workspace_name": "workspace_name",
+    "workspace_region": "workspace_region",
+    "service_principal_id": "service_principal_id",
+    "service_principal_password": "service_principal_password",
+    "tenant_id": "tenant_id"
+}
+```
+
+**Note:** You should execute this script locally or on a VM, after you installed the AzureML SDK for Python (e.g. `pip install azureml-core`).
+
+
+## Create Service Principal for non-interactive authentication.
+
+Follow the instructions of section "Service Principal Authentication" in [this notebook](https://github.com/Azure/MachineLearningNotebooks/blob/master/how-to-use-azureml/manage-azureml-service/authentication-in-azureml/authentication-in-azureml.ipynb). 
+
+> We recommend to scope the Service Principal to the Resource Group.
+
+**Note:** Add `service_principal_id`, `service_principal_password`, and `tenant_id` to the `config.json` file above.  You can then upload the `config.json` file to the secure file libary of your DevOps project. Make sure to enable all pipelines to have access to the secure file.
+
+## Add config.json to library of secure files
+
+In your Azure DevOps project, click on the rocket icon on the left, then the library. In your library go to *secure files* and *+ Secure File*. Upload your file and make sure that you allow all pipelines to use it.
+
+
+## Add Service Connections to your DevOps project
+
+Next we configure your project such that the release pipeline has access to your fork of our github repo, to your AzureML Workspace, and to your Azure Container Registry (for Docker images).
+
+Go to the settings of your project, `Service Connections` and click on `New Service Connection`.
+
+- Create one Service Connection of type `GitHub`.
+- Create one of type `Azure Resource Manager`, using the Service Principal Connection credentials from above.
+
+## Install MLOps extension for Azure DevOps
+
+You can install the MLOps extension from here: [https://marketplace.visualstudio.com/items?itemName=ms-air-aiagility.vss-services-azureml](https://marketplace.visualstudio.com/items?itemName=ms-air-aiagility.vss-services-azureml).
+
+# Create Release Pipeline
+
+Now we can build the Release pipeline. The final pipeline should look like this:
+
+![schematic pipeline](./media/pipeline.png)
+
+## Connect Artifacts
+
+The pipeline is connected to two `Artifacts`, your fork of our GitHub repository and our model in the AzureML model registry.  You can add these by clicking the `+ Add` button, next to `Artifacts`.
+
+
+If the pipeline is triggered, it will execute the tasks in `Stage 1`:
+
+![tasks of stage 1](./media/stage_1.png)
+
+Let's go through the steps indivually
+
+### Download Secure file
+
+![01_download_secure_file.png](./media/01_download_secure_file.png)
+
+We called our file `wopauli_onnx_config.json`. Feel free to give it a different name. It helps to add some kind of identifier, in case you have other release pipelines that work with other AzureML Workspaces or Service Principals.
+
+### Copy Secure file
+
+![02_copy_secure_file.png](./media/02_copy_secure_file.png)
+
+We copy the file from the Agent.TempDirectory into the aml folder below the root of the cloned code repository (`cp $(Agent.TempDirectory)/wopauli_onnx_config.json ./_wmpauli_onnxruntime-iot-edge/aml/config.json`).
+
+> `Agent.TempDirectory` is a predefined variable. Check out what other predefined variables exist: [https://docs.microsoft.com/en-us/azure/devops/pipelines/build/variables](https://docs.microsoft.com/en-us/azure/devops/pipelines/build/variables)
+
+### Download Model from AzureML Model Registry
+
+![03_python_script.png](./media/03_python_script.png)
+
+We use the AzureML SDK for Python to download the latest model from the Model Registry (`$(System.DefaultWorkingDirectory)/_wmpauli_onnxruntime-iot-edge/aml/download_model.py`)
+
+### Build Modules
+
+![04_build_modules.png](./media/04_build_modules.png)
+
+We build the modules (docker images) of our solution.  Make sure you point it to the correct `deployment.template.json` file, and pick the correct `Default platform`, and `Action`.
+
+### Push Modules
+
+![05_push_modules.png](./media/05_push_modules.png)
+
+The next step is to push the modules to the container registry.
+
+You can use the Azure Container Registry that was create along your Workspace above. As `Azure Subscription`, pick the Service connection you created above to connect to your workspace.
+
+### Deploy to Edge Device
+
+![06_deploy.png](./media/06_deploy.png)
+
+The last step is deploy the modules to the Edge device.
+
+
+# Test
+
+Now you can run `aml/model_registration.py` again. This should trigger a run of this release pipeline.  
+
+*Note*: Make sure you clicked on the lightning Icon (continuous deployment trigger) on the `Artifact` `_TinyYOLO`, to make sure that the release pipeline is triggered when you register a new model in the Model Registry.
+
+==============================
+#### Contribution
+
+This project welcomes contributions and suggestions. Most contributions require you to
+agree to a Contributor License Agreement (CLA) declaring that you have the right to,
+and actually do, grant us the rights to use your contribution. For details, visit
+https://cla.microsoft.com.
+ 
+When you submit a pull request, a CLA-bot will automatically determine whether you need
+to provide a CLA and decorate the PR appropriately (e.g., label, comment). Simply follow the
+instructions provided by the bot. You will only need to do this once across all repositories using our CLA.
+
+# Legal
+ 
+## Code of conduct
+ 
+This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/).
+For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/)
+or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
+ 
+## Reporting security issues
+Security issues and bugs should be reported privately, via email, to the
+Microsoft Security Response Center (MSRC) at [secure@microsoft.com](mailto:secure@microsoft.com).
+You should receive a response within 24 hours. If for some reason you do not, please follow up via
+email to ensure we received your original message. Further information, including the
+[MSRC PGP](https://technet.microsoft.com/en-us/security/dn606155) key, can be found in the
+[Security TechCenter](https://technet.microsoft.com/en-us/security/default).
+ 
+## License
+Copyright (c) Microsoft Corporation. All rights reserved.
+ 
+MIT License
+ 
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+ 
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+ 
+THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
