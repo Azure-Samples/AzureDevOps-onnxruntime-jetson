@@ -107,38 +107,41 @@ Service Principal enables non-interactive authentication for any specific user l
 
 > Note that you must have administrator privileges over the Azure subscription to complete these steps.
 
-```
-Follow the instructions of section "Service Principal Authentication" in [this notebook](https://github.com/Azure/MachineLearningNotebooks/blob/master/how-to-use-azureml/manage-azureml-service/authentication-in-azureml/authentication-in-azureml.ipynb). 
+````
+Follow the instructions of section "Service Principal Authentication" in [this notebook](https://github.com/Azure/MachineLearningNotebooks/blob/master/how-to-use-azureml/manage-azureml-service/authentication-in-azureml/authentication-in-azureml.ipynb).
 
-> We recommend to scope the Service Principal to the Resource Group.
+We recommend to scope the Service Principal to the Resource Group.
 
 **Note:** Add `service_principal_id`, `service_principal_password`, and `tenant_id` to the `config.json` file above. You can then upload the `config.json` file to the secure file libary of your DevOps project. Make sure to enable all pipelines to have access to the secure file.
-```
+````
 
 Add config.json to library of secure files in the Azure DevOps project. Select on the rocket icon on the left, then the library. In your library go to *secure files* and *+ Secure File*. Upload your file and make sure that you allow all pipelines to use it.
-<p align="center"><img width="100%" src="media/ado_lib.png" alt="Library in Azure DevOps project"/></p>
+
+<p align="left"><img width="100%" src="media/ado_lib.png" alt="Library in Azure DevOps project"/></p>
 
 
-## Add Service Connections to your DevOps project
+#### Add Service Connections to your DevOps project
 
-Next we configure your project such that the release pipeline has access to your fork of our github repo, to your AzureML Workspace, and to your Azure Container Registry (for Docker images).
+Next, we configure the project such that the release pipeline has access to the code in github repo, to your AzureML Workspace, and to the Azure Container Registry (for Docker images).
 
 Go to the settings of your project, `Service Connections` and click on `New Service Connection`.
 
 - Create one Service Connection of type `GitHub`.
 - Create one of type `Azure Resource Manager`, using the Service Principal Connection credentials from above.
 
-## Install MLOps extension for Azure DevOps
+<p align="left"><img width="100%" src="media/ado_settings.png" alt="Settings to add a new Service Connection"/></p>
+
+#### Install MLOps extension for Azure DevOps
 
 You can install the MLOps extension from here: [https://marketplace.visualstudio.com/items?itemName=ms-air-aiagility.vss-services-azureml](https://marketplace.visualstudio.com/items?itemName=ms-air-aiagility.vss-services-azureml).
 
-# Create Release Pipeline
+#### Create Release Pipeline
 
 Now we can build the Release pipeline. The final pipeline should look like this:
 
 ![schematic pipeline](./media/pipeline.png)
 
-## Connect Artifacts
+#### Connect Artifacts
 
 The pipeline is connected to two `Artifacts`, your fork of our GitHub repository and our model in the AzureML model registry.  You can add these by clicking the `+ Add` button, next to `Artifacts`.
 
@@ -149,13 +152,13 @@ If the pipeline is triggered, it will execute the tasks in `Stage 1`:
 
 Let's go through the steps indivually
 
-### Download Secure file
+#### Download Secure file
 
 ![01_download_secure_file.png](./media/01_download_secure_file.png)
 
 We called our file `wopauli_onnx_config.json`. Feel free to give it a different name. It helps to add some kind of identifier, in case you have other release pipelines that work with other AzureML Workspaces or Service Principals.
 
-### Copy Secure file
+#### Copy Secure file
 
 ![02_copy_secure_file.png](./media/02_copy_secure_file.png)
 
@@ -163,19 +166,19 @@ We copy the file from the Agent.TempDirectory into the aml folder below the root
 
 > `Agent.TempDirectory` is a predefined variable. Check out what other predefined variables exist: [https://docs.microsoft.com/en-us/azure/devops/pipelines/build/variables](https://docs.microsoft.com/en-us/azure/devops/pipelines/build/variables)
 
-### Download Model from AzureML Model Registry
+#### Download Model from AzureML Model Registry
 
 ![03_python_script.png](./media/03_python_script.png)
 
 We use the AzureML SDK for Python to download the latest model from the Model Registry (`$(System.DefaultWorkingDirectory)/_wmpauli_onnxruntime-iot-edge/aml/download_model.py`)
 
-### Build Modules
+#### Build Modules
 
 ![04_build_modules.png](./media/04_build_modules.png)
 
 We build the modules (docker images) of our solution.  Make sure you point it to the correct `deployment.template.json` file, and pick the correct `Default platform`, and `Action`.
 
-### Push Modules
+#### Push Modules to ACR
 
 ![05_push_modules.png](./media/05_push_modules.png)
 
@@ -183,20 +186,23 @@ The next step is to push the modules to the container registry.
 
 You can use the Azure Container Registry that was create along your Workspace above. As `Azure Subscription`, pick the Service connection you created above to connect to your workspace.
 
-### Deploy to Edge Device
+## <a name="S3"></a>3. Deployment
+
+
+#### Deploy to Edge Device
 
 ![06_deploy.png](./media/06_deploy.png)
 
 The last step is deploy the modules to the Edge device.
 
 
-# Test
+#### Test
 
 Now you can run `aml/model_registration.py` again. This should trigger a run of this release pipeline.  
 
 *Note*: Make sure you clicked on the lightning Icon (continuous deployment trigger) on the `Artifact` `_TinyYOLO`, to make sure that the release pipeline is triggered when you register a new model in the Model Registry.
 
-## <a name="S3"></a>3. Deployment
+
 
 
 
