@@ -136,6 +136,7 @@ You can install the MLOps extension from here: [https://marketplace.visualstudio
 Now we can build the Release pipeline for the project by selecting __Create Pipeline__ under _Pipelines_ in the Azure DevOps project. 
 
 __Connect Artifacts__
+
 Our pipeline is connected to two `Artifacts`, your fork of our GitHub repository and our model in the AzureML model registry. You can add these by clicking the `+ Add` button, next to `Artifacts`.
 
 The final pipeline should look like this:
@@ -147,41 +148,51 @@ When the pipeline is triggered, it will execute the tasks in `Stage 1`:
 Let's go through the steps:
 
 __Download Secure file__
+
 The `config.json` is downloaded from the Secure Library of our DevOps project is downloaded for the pipeline to authenticate with the different Azure services. We called our file `wopauli_onnx_config.json` in this example. Feel free to give it a different name. It helps to add some kind of identifier, in case you have other release pipelines that work with other AzureML Workspaces or Service Principals.
 <p align="left"><img width="50%" src="./media/01_download_secure_file.png" alt="download secure file"/></p>
 
 __Copy Secure file__
+
 Copy the `config.json` file from the `Agent.TempDirectory` into the `aml` folder of the cloned code repository (`cp $(Agent.TempDirectory)/wopauli_onnx_config.json ./_wmpauli_onnxruntime-iot-edge/aml/config.json`).
 <p align="left"><img width="50%" src="./media/02_copy_secure_file.png" alt="Copy the secure file"/></p>
 
 > `Agent.TempDirectory` is a predefined variable. Check out what other predefined variables exist: [https://docs.microsoft.com/en-us/azure/devops/pipelines/build/variables](https://docs.microsoft.com/en-us/azure/devops/pipelines/build/variables)
 
 __Download Model from AzureML Model Registry__
+
 This pipeline is trigerred when a new model is available in the AML Model registry. We use the AzureML SDK for Python to download the latest model from the Model Registry. This is the ONNX model we saved as the last step in the [Training step](#S1) above. (`$(System.DefaultWorkingDirectory)/_wmpauli_onnxruntime-iot-edge/aml/download_model.py`)
 <p align="left"><img width="50%" src="./media/03_python_script.png" alt="Python scripts to download trained model from AML"/></p>
 
 __Build Modules__
+
 Next, we will rebuild the IoT modules (docker images) of our solution to update with the new ONNX model.  Make sure you point it to the correct `deployment.template.json` file, and pick the correct `Default platform`, and `Action`.
 <p align="left"><img width="50%" src="./media/04_build_modules.png" alt="Build docker images for the application containers"/></p>
 
 __Push Modules to ACR__
+
 After the modules are created we will push them to the Azure Container Registry. You can use the Azure Container Registry that was creates along your Azure ML Workspace above. As `Azure Subscription`, pick the Service connection you created above to connect to your workspace.
 <p align="left"><img width="50%" src="./media/05_push_modules.png" alt="Push the docker images to ACR"/></p>
 
 __Deploy to Edge Device__
+
 The last step in the pipeline is to deploy the modules to the Edge device.
 <p align="left"><img width="50%" src="./media/06_deploy.png" alt="Deploy the module"/></p>
 
 #### Automate re-training-to-deployment
 
-Now you can run `src/model_registration.py` again. This should trigger a run of this release pipeline.  
+Now you can run `src/model_registration.py` to manually trigger a loop of this release pipeline.
 
-*Note*: Make sure you clicked on the lightning Icon (continuous deployment trigger) on the `Artifact` `_TinyYOLO`, to make sure that the release pipeline is triggered when you register a new model in the Model Registry.
-
-
+Make sure you clicked on the lightning Icon (continuous deployment trigger) on the `Artifact` `_TinyYOLO`, to make sure that the release pipeline is triggered when you register a new model in the Model Registry.
 
 
+### Ideas for expanding to other scenarios
 
+You can expand this sample to address more complex Machine Learning scenarios.
+
+* Use [AzureML MLOps](https://docs.microsoft.com/en-us/azure/machine-learning/concept-model-management-and-deployment#what-is-mlops) to increase efficiencies for the ML workflows.
+
+* Deploy to different HW configurations by using different Docker base images in the Build step. You can update the dockerfiles to change the base image configuration.
 
 ==============================
 ## Contribution
