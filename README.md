@@ -10,6 +10,7 @@ products:
 
 # Azure DevOps Pipeline with ONNX Runtime
 
+This sample will setup a pipeline to training, package and deploy the Tiny Yolo model in a IoT Edge device. There are three phases in this pipeline. (1) __Training__ the Tiny Yolo v3 model in Azure Machine Learning and converting it to ONNX. (2) __Packaging__ the ONNX model and the application code in a docker image for the NVIDIA Jetson Nano device. (3) __Deploying__ the docker images on the target device using Azure IoT Edge. All these steps are automated in a DevOps pipeline using Azure DevOps.
 
 ## Setup Steps to Train the Model in Azure Machine Learning
 
