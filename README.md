@@ -183,8 +183,8 @@ The last step in the pipeline is to deploy the modules to the Edge device.
 
 Now you can run `src/model_registration.py` to manually trigger a loop of this release pipeline.
 
-Make sure you clicked on the lightning Icon (continuous deployment trigger) on the `Artifact` `_TinyYOLO`, to make sure that the release pipeline is triggered when you register a new model in the Model Registry.
-
+Make sure to click on the Lightning Icon (continuous deployment trigger) on the `Artifact` for `_TinyYOLO` (i.e. the Model Registry in AzureML), to make sure that the release pipeline is triggered when you register a new model in the Model Registry. You can do that from __Pipeline__ -> __Release__ -> __Edit__.
+<p align="left"><img width="50%" src="./media/lightning_icon.png" alt="Automatic trigger for pipeline"/></p>
 
 ### Ideas for expanding to other scenarios
 
