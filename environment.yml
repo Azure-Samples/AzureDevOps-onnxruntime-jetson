@@ -1,0 +1,19 @@
+name: keras-yolo3-tmp
+channels:
+  - default
+  - conda-forge
+dependencies:
+  - python=3.6.11
+  - pip
+  - pip:
+    - keras==2.2.4
+    - tensorflow==1.14.0
+    - pillow
+    - matplotlib
+    - h5py
+    - tensorboard
+    - azureml-sdk
+    - onnxruntime==1.4.0
+    - onnx==1.7.0
+    - git+git://github.com/microsoft/onnxconverter-common.git@3451bbffe61a2591a17f4d99a405b48e9ae8e395
+    - git+git://github.com/onnx/keras-onnx.git@ff17787c393e2ce34d43185447d7354525f3ba87
