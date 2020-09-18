@@ -10,6 +10,8 @@ products:
 
 # Azure DevOps Pipeline with ONNX Runtime
 
+<p align="center"><img width="100%" src="media/project_pic.png" alt="Azure DevOps project for ONNX Runtime and NVIDIA Jetson"/></p>
+
 This sample will setup a pipeline to train, package and deploy Machine Learning models in IoT Edge Devices. There are two phases in this pipeline.
 
 1. __Training on AzureML__ - Train the Tiny Yolo v3 model in Azure Machine Learning and converting it to ONNX.
@@ -143,7 +145,12 @@ Now we can build the Release pipeline for the project by selecting __Create Pipe
 
 __Connect Artifacts__
 
-Our pipeline is connected to two `Artifacts`, your fork of our GitHub repository and our model in the AzureML model registry. You can add these by clicking the `+ Add` button, next to `Artifacts`.
+Our pipeline is connected to two `Artifacts`.
+
+* Your fork of [this](https://github.com/Azure-Samples/onnxruntime-iot-edge) GitHub repository and, 
+* Your Model Registry from the AzureML Workspace. 
+
+You can add these by clicking the `+ Add` button, next to `Artifacts`.
 
 The final pipeline should look like this:
 <p align="left"><img width="50%" src="./media/pipeline.png" alt="schematic pipeline"/></p>
@@ -198,7 +205,7 @@ You can expand this sample to address more complex Machine Learning scenarios.
 
 * Use [AzureML MLOps](https://docs.microsoft.com/en-us/azure/machine-learning/concept-model-management-and-deployment#what-is-mlops) to increase efficiencies for the ML workflows.
 
-* Deploy to different HW configurations by using different Docker base images in the Build step. You can update the dockerfiles to change the base image configuration.
+* Deploy to different HW configurations by using different Docker base images in the Build step. You can update the dockerfiles to change the base image configuration but reusing the same application code and model.
 
 ==============================
 ## Contribution
