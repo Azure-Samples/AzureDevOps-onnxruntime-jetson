@@ -76,7 +76,7 @@ class YOLONMSLayer(keras.layers.Layer):
     def __init__(self, **kwargs):
         super(YOLONMSLayer, self).__init__()
         self.max_boxes = kwargs.get('max_boxes', 20)
-        self.score_threshold = kwargs.get('score_threshold', .6)
+        self.score_threshold = kwargs.get('score_threshold', .1)
         self.iou_threshold = kwargs.get('iou_threshold', .5)
         self.num_classes = kwargs.get('num_classes')
 
