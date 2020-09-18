@@ -1,9 +1,9 @@
 # Copyright (c) Microsoft. All rights reserved.
 # Licensed under the MIT license. See LICENSE file in the project root for
 # full license information.
- 
-import argparse
+
 import os
+import argparse
 import sys
 import inspect
 import colorsys
@@ -137,11 +137,11 @@ class YOLONMSLayer(keras.layers.Layer):
 
 
 class YOLO(object):
-    def __init__(self, model_path='model_data/tiny_yolo_weights.h5', anchors_path='model_data/tiny_yolo_anchors.txt', yolo3_dir=None):
+    def __init__(self, model_path='model_data/tiny_yolo_weights.h5', anchors_path='model_data/tiny_yolo_anchors.txt', yolo3_dir=None, classes_path='model_data/coco_classes.txt'):
         self.yolo3_dir = yolo3_dir
         self.model_path = model_path
         self.anchors_path = anchors_path
-        self.classes_path = 'model_data/coco_classes.txt'
+        self.classes_path = classes_path
         self.score = 0.3
         self.iou = 0.45
         self.class_names = self._get_class()
@@ -378,10 +378,11 @@ set_converter(YOLONMSLayer, convert_NMSLayer)
 yolo_model_graph_tiny = None
 evaluation_model_graph_tiny = None
 nms_model_graph_tiny = None
+num_classes = 20
 
 @Graph.trace(
     input_types=[_Ty.F(shape=['N', 3, 'M1', 'M2']), _Ty.F(shape=['N', 2])],
-    output_types=[_Ty.F(shape=[1, 'M1', 4]), _Ty.F(shape=[1, 80, 'M2']), _Ty.I32(shape=[1, 'M3', 3])],
+    output_types=[_Ty.F(shape=[1, 'M1', 4]), _Ty.F(shape=[1, num_classes, 'M2']), _Ty.I32(shape=[1, 'M3', 3])],
     outputs=["yolonms_layer_1", "yolonms_layer_1_1", "yolonms_layer_1_2"])
 def combine_model_tiny(input_1, image_shape):
     global yolo_model_graph_tiny
@@ -400,7 +401,7 @@ nms_model_graph = None
 
 @Graph.trace(
     input_types=[_Ty.F(shape=['N', 3, 'M1', 'M2']), _Ty.F(shape=['N', 2])],
-    output_types=[_Ty.F(shape=[1, 'M1', 4]), _Ty.F(shape=[1, 80, 'M2']), _Ty.I32(shape=[1, 'M3', 3])],
+    output_types=[_Ty.F(shape=[1, 'M1', 4]), _Ty.F(shape=[1, num_classes, 'M2']), _Ty.I32(shape=[1, 'M3', 3])],
     outputs=["yolonms_layer_1", "yolonms_layer_1_1", "yolonms_layer_1_2"])
 def combine_model(input_1, image_shape):
     global yolo_model_graph
@@ -458,38 +459,31 @@ def convert_model(yolo, is_tiny_yolo, target_opset=None):
 
 
 if __name__ == '__main__':
-    if len(sys.argv) < 2:
-        print("Need an image file for object detection.")
-        exit(-1)
-
-    parser = argparse.ArgumentParser(description='Keras Converter to ONNX converter.')
-    parser.add_argument('model_path', type=str, help='Path to Keras weights file.')
-    parser.add_argument('anchors_path', type=str, help='Path to model achors file file.')
-    parser.add_argument('onnx_filename', type=str, help='Path to converted ONNX model')
-    parser.add_argument('target_opset', type=int, help='ONNX opset version')
-    
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--test_image', type=str, default=None, help='path to a test image for inference step', required=False)
+    parser.add_argument('--model_path', type=str, default='model_data/yolo.h5', help='path to keras model weights')
+    parser.add_argument('--model_file_name', type=str, default='model_data/yolov3.onnx', help='path where to store converted model')
+    parser.add_argument('--anchors_path', type=str, default='model_data/yolo_anchors.txt', help='path to anchor definitions')
+    parser.add_argument('--classes_path', type=str, default='model_data/coco_classes.txt', help='path to anchor definitions')
+    parser.add_argument('--overwrite', action="store_true", help='path to anchor definitions')
+    parser.add_argument('--target_opset', type=int, help='path to anchor definitions')
     args = parser.parse_args()
+    
+    if not args.test_image:
+        print("Need an image file for object detection test, will skip that step.")
 
-    model_path = args.model_path # 'model_data/tiny_yolo_weights.h5'
-    print("model_path: ",model_path)
-    anchors_path = args.anchors_path # 'model_data/tiny_yolo_anchors.txt'
-    print("anchors_path: ",anchors_path)
-    model_file_name = args.onnx_filename # 'model_data/yolov3-tiny.onnx'
-    print("model_filename: ", model_file_name)
-    target_opset = args.target_opset # default is 11
-    print("target_opset: ", target_opset)
+    model_file_name = args.model_file_name
+    model_path = args.model_path
+    anchors_path = args.anchors_path
+    classes_path = args.classes_path
+    target_opset = args.target_opset
+    test_image = args.test_image
 
-    '''
-    # For tiny yolov3 case, use:
-    model_file_name = 'model_data/yolov3.onnx'
-    model_path = 'model_data/yolo.h5'  # model path or trained weights path
-    anchors_path = 'model_data/yolo_anchors.txt'
-    '''
-
-    if not os.path.exists(model_file_name):
-        yolo = YOLO(model_path, anchors_path)
+    if args.overwrite:
+        yolo = YOLO(model_path=model_path, anchors_path=anchors_path, classes_path=classes_path)
         yolo.load_model()
-        onnxmodel = convert_model(yolo, target_opset)
+        onnxmodel = convert_model(yolo, True, target_opset=target_opset)
         onnx.save_model(onnxmodel, model_file_name)
 
-    detect_img(YOLO(model_path, anchors_path), sys.argv[1], model_file_name)
+    if args.test_image:
+        detect_img(YOLO(model_path=model_path, anchors_path=anchors_path, classes_path=classes_path), test_image, model_file_name)
