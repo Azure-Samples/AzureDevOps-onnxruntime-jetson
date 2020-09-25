@@ -22,7 +22,7 @@ ws = Workspace.create(
     auth=auth,
     subscription_id=config['subscription_id'],
     resource_group=config['resource_group'],
-    location=config['location']
+    location=config['workspace_region'],
     exist_ok=True,
     show_output=True,
 )

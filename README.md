@@ -52,7 +52,7 @@ In this step we will use weights for Tiny Yolo v3 from the original release by D
 [Clone this repo to your AML Workspace](https://docs.microsoft.com/en-us/azure/machine-learning/how-to-run-jupyter-notebooks#terminal) to run this training notebook.
 You can use regular `git clone --recursive https://github.com/Azure-Samples/AzureDevOps-onnxrutime-jetson` CLI commands from the Notebook Terminal in AML to clone this repository into a desired folder in your workspace.
 
-__Get Started to Train__: Open the notebook `Training-keras-yolo3-AML.ipynb` and start executing the cells to train the Tiny Yolo model. 
+__Get Started to Train__: Open the notebook `Training-keras-yolo3-AML.ipynb` and start executing the cells to train the Tiny Yolo model. If the compute you create shows connecting for 10+ minutes, try creating a new workspace in a different region. 
 
 ## <a name="S2"></a>2. Release Pipeline
 
@@ -66,11 +66,11 @@ Go to [https://dev.azure.com/](https://dev.azure.com/) and create a new organiza
 
 #### Setup Dev machine
 
-The _Dev machine_ is setup to run the jobs for the CI/CD pipeline. Since the test device is a ubuntu/ARM64 platform we will need to build the ARM64 docker images on the host platform with same HW configuration. Another approach is to setup a docker cross-build environment in Azure which is beyond the scope of this tutorial and not fully validated for ARM64 configuration.
+The _Dev machine_ (i.e. Jetson device) is setup to run the jobs for the CI/CD pipeline. Since the test device is a ubuntu/ARM64 platform we will need to build the ARM64 docker images on the host platform with same HW configuration. Another approach is to setup a docker cross-build environment in Azure which is beyond the scope of this tutorial and not fully validated for ARM64 configuration.
 
 ##### Azure DevOps Agent
 
-Install the self-hosted Azure DevOps agent. Follow the instructions on this page: https://docs.microsoft.com/en-us/azure/devops/pipelines/agents/v2-linux?view=azure-devops.
+Install the self-hosted Azure DevOps agent onto the dev machine. Follow the instructions on this page: https://docs.microsoft.com/en-us/azure/devops/pipelines/agents/v2-linux?view=azure-devops.
 
 ##### Install Azure IoT Edge Dev Tool
 
@@ -105,7 +105,7 @@ Follow the instructions from the section __Service Principal Authentication__ in
 
 #### Config for AzureML workspace
 
-Note the configuration details of your AML Workspace in a `config.json` file. This file will later be needed for your Release Pipeline to ahve access to your AzureML workspace.  You can find most of the info in the Azure Portal.
+Note the configuration details of your AML Workspace in a `config.json` file. This file will later be needed for your Release Pipeline to have access to your AzureML workspace.  You can find most of the info in the Azure Portal.
 
 
 ```
@@ -131,50 +131,40 @@ Next, we configure the project such that the release pipeline has access to the 
 Go to the settings of your project, `Service Connections` and click on `New Service Connection`.
 
 - Create one Service Connection of type `GitHub`.
-- Create one of type `Azure Resource Manager`, using the Service Principal Connection credentials from above.
+- Create one of type `Azure Resource Manager`. Select scope level as Machine Learning Workspace and use the same credentials from above.
 
 <p align="left"><img width="50%" src="media/ado_settings.png" alt="Settings to add a new Service Connection"/></p>
 
 #### Install MLOps extension for Azure DevOps
 
-You can install the MLOps extension from here: [https://marketplace.visualstudio.com/items?itemName=ms-air-aiagility.vss-services-azureml](https://marketplace.visualstudio.com/items?itemName=ms-air-aiagility.vss-services-azureml).
+You can install the MLOps extension from here: [https://marketplace.visualstudio.com/items?itemName=ms-air-aiagility.vss-services-azureml](https://marketplace.visualstudio.com/items?itemName=ms-air-aiagility.vss-services-azureml). This will allow you to connect your TinyYOLO model to your pipeline.
 
 ### Create Release Pipeline
 
-Now we can build the Release pipeline for the project by selecting __Create Pipeline__ under _Pipelines_ in the Azure DevOps project. 
+Now we can build the Release pipeline for the project by selecting __Releases__ under _Pipelines_ then __New Pipeline__ in the Azure DevOps project. Select the template for the stage as _Empty job_. 
 
-__Connect Artifacts__
-
-Our pipeline is connected to two `Artifacts`.
-
-* Your fork of [this](https://github.com/Azure-Samples/onnxruntime-iot-edge) GitHub repository and, 
-* Your Model Registry from the AzureML Workspace. 
-
-You can add these by clicking the `+ Add` button, next to `Artifacts`.
-
-The final pipeline should look like this:
-<p align="left"><img width="50%" src="./media/pipeline.png" alt="schematic pipeline"/></p>
+__Creating Stage 1__
 
 When the pipeline is triggered, it will execute the tasks in `Stage 1`:
 <p align="left"><img width="50%" src="./media/stage_1.png" alt="tasks of stage 1"/></p>
 
-Let's go through the steps:
+Let's go through the steps (Replace ):
 
 __Download Secure file__
 
-The `config.json` is downloaded from the Secure Library of our DevOps project is downloaded for the pipeline to authenticate with the different Azure services. We called our file `wopauli_onnx_config.json` in this example. Feel free to give it a different name. It helps to add some kind of identifier, in case you have other release pipelines that work with other AzureML Workspaces or Service Principals.
+The `config.json` is downloaded from the Secure Library of our DevOps project is downloaded for the pipeline to authenticate with the different Azure services. We called our file `wopauli_onnx_config.json` in this example. Feel free to give it a different name. It helps to add some kind of identifier, in case you have other release pipelines that work with other AzureML Workspaces or Service Principals. Make sure you're passing in your path for each step below.
 <p align="left"><img width="50%" src="./media/01_download_secure_file.png" alt="download secure file"/></p>
 
 __Copy Secure file__
 
-Copy the `config.json` file from the `Agent.TempDirectory` into the `aml` folder of the cloned code repository (`cp $(Agent.TempDirectory)/wopauli_onnx_config.json ./_wmpauli_onnxruntime-iot-edge/aml/config.json`).
+Copy the `config.json` file from the `Agent.TempDirectory` into the `aml` folder of the cloned code repository (`cp $(Agent.TempDirectory)/_Azure-Samples_onnx_config.json ./_wmpauli_onnxruntime-iot-edge/aml/config.json`).
 <p align="left"><img width="50%" src="./media/02_copy_secure_file.png" alt="Copy the secure file"/></p>
 
 > `Agent.TempDirectory` is a predefined variable. Check out what other predefined variables exist: [https://docs.microsoft.com/en-us/azure/devops/pipelines/build/variables](https://docs.microsoft.com/en-us/azure/devops/pipelines/build/variables)
 
 __Download Model from AzureML Model Registry__
 
-This pipeline is trigerred when a new model is available in the AML Model registry. We use the AzureML SDK for Python to download the latest model from the Model Registry. This is the ONNX model we saved as the last step in the [Training step](#S1) above. (`$(System.DefaultWorkingDirectory)/_wmpauli_onnxruntime-iot-edge/aml/download_model.py`)
+This pipeline is triggered when a new model is available in the AML Model registry. We use the AzureML SDK for Python to download the latest model from the Model Registry. This is the ONNX model we saved as the last step in the [Training step](#S1) above. (`$(System.DefaultWorkingDirectory)/_Azure-Samples_onnxruntime-iot-edge/aml/download_model.py`)
 <p align="left"><img width="50%" src="./media/03_python_script.png" alt="Python scripts to download trained model from AML"/></p>
 
 __Build Modules__
@@ -184,13 +174,25 @@ Next, we will rebuild the IoT modules (docker images) of our solution to update 
 
 __Push Modules to ACR__
 
-After the modules are created we will push them to the Azure Container Registry. You can use the Azure Container Registry that was creates along your Azure ML Workspace above. As `Azure Subscription`, pick the Service connection you created above to connect to your workspace.
+After the modules are created we will push them to the Azure Container Registry. You can use the Azure Container Registry that was created in your Azure ML Workspace above. As `Azure Subscription`, pick the Service connection you created above to connect to your workspace.
 <p align="left"><img width="50%" src="./media/05_push_modules.png" alt="Push the docker images to ACR"/></p>
 
 __Deploy to Edge Device__
 
-The last step in the pipeline is to deploy the modules to the Edge device.
+The last step of stage 1 is to deploy the modules to the Edge device. 
 <p align="left"><img width="50%" src="./media/06_deploy.png" alt="Deploy the module"/></p>
+
+__Connect Artifacts__
+
+Our pipeline is connected to two `Artifacts`.
+
+* [This](https://github.com/Azure-Samples/onnxruntime-iot-edge) GitHub repository and, 
+* Your Model Registry from the AzureML Workspace. Click on the drop down and select service principal you created. 
+
+You can add these by clicking the `+ Add` button, next to `Artifacts`. 
+
+The final pipeline should look like this:
+<p align="left"><img width="50%" src="./media/pipeline.png" alt="schematic pipeline"/></p>
 
 #### Automate re-training-to-deployment
 
