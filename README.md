@@ -99,7 +99,7 @@ Service Principal enables non-interactive authentication for any specific user l
 
 > Note that you must have administrator privileges over the Azure subscription to complete these steps.
 
-Follow the instructions from the section __Service Principal Authentication__ in [this notebook](https://github.com/Azure/MachineLearningNotebooks/blob/master/how-to-use-azureml/manage-azureml-service/authentication-in-azureml/authentication-in-azureml.ipynb) to create a service principal for your project. We recommend to scope the Service Principal to the _Resource Group_.
+Follow the instructions from the section __Service Principal Authentication__ in [this notebook](https://github.com/Azure/MachineLearningNotebooks/blob/master/how-to-use-azureml/manage-azureml-service/authentication-in-azureml/authentication-in-azureml.ipynb) to create a service principal for your project. We recommend to scope the Service Principal to the _Resource Group_. When editing Access Control, select _Contributor_ and add your Service Principal to your Resource Group.
 
 <p align="left"><img width="50%" src="media/ado_lib.png" alt="Library in Azure DevOps project"/></p>
 
@@ -143,12 +143,19 @@ You can install the MLOps extension from here: [https://marketplace.visualstudio
 
 Now we can build the Release pipeline for the project by selecting __Releases__ under _Pipelines_ then __New Pipeline__ in the Azure DevOps project. Select the template for the stage as _Empty job_. 
 
+__Connect Artifacts__
+
+First, add the artifacts. Our pipeline is connected to two `Artifacts`.
+
+* [This](https://github.com/Azure-Samples/onnxruntime-iot-edge) GitHub repository and, 
+* Your Model Registry from the AzureML Workspace. Click on the drop down and select service principal you created. 
+
+You can add these by clicking the `+ Add` button, next to `Artifacts`. 
+
 __Creating Stage 1__
 
-When the pipeline is triggered, it will execute the tasks in `Stage 1`:
+When the pipeline is triggered, it will execute the tasks in `Stage 1`. Start by creating an _Empty Job_. Then select __Stage 1__. First select _Agent Job_ and in _Agent Selection_ locate your Jetson Device; you may have to click on __Manage__ to find it. Now, let's add the 6 tasks for stage 1:
 <p align="left"><img width="50%" src="./media/stage_1.png" alt="tasks of stage 1"/></p>
-
-Let's go through the steps (Replace ):
 
 __Download Secure file__
 
@@ -157,14 +164,14 @@ The `config.json` is downloaded from the Secure Library of our DevOps project is
 
 __Copy Secure file__
 
-Copy the `config.json` file from the `Agent.TempDirectory` into the `aml` folder of the cloned code repository (`cp $(Agent.TempDirectory)/_Azure-Samples_onnx_config.json ./_wmpauli_onnxruntime-iot-edge/aml/config.json`).
+Copy the `config.json` file from the `Agent.TempDirectory` into the `aml` folder of the cloned code repository (`cp $(Agent.TempDirectory)/config.json ./_Azure-Samples_onnxruntime-iot-edge/aml/config.json`).
 <p align="left"><img width="50%" src="./media/02_copy_secure_file.png" alt="Copy the secure file"/></p>
 
 > `Agent.TempDirectory` is a predefined variable. Check out what other predefined variables exist: [https://docs.microsoft.com/en-us/azure/devops/pipelines/build/variables](https://docs.microsoft.com/en-us/azure/devops/pipelines/build/variables)
 
 __Download Model from AzureML Model Registry__
 
-This pipeline is triggered when a new model is available in the AML Model registry. We use the AzureML SDK for Python to download the latest model from the Model Registry. This is the ONNX model we saved as the last step in the [Training step](#S1) above. (`$(System.DefaultWorkingDirectory)/_Azure-Samples_onnxruntime-iot-edge/aml/download_model.py`)
+This pipeline is triggered when a new model is available in the AML Model registry. We use the AzureML SDK for Python to download the latest model from the Model Registry. This is the ONNX model we saved as the last step in the [Training step](#S1) above. (`$(System.DefaultWorkingDirectory)/_Azure-Samples_onnxruntime-iot-edge/aml/download_model.py`) Under _Advanced_, make sure to add the path to your python executable on your Jetson Device. In the conda environment you created earlier, you can find your path with `which python`. Also select the "_Azure-Samples_onnxruntime-iot-edge" working directory and check _Fail on standard error_.
 <p align="left"><img width="50%" src="./media/03_python_script.png" alt="Python scripts to download trained model from AML"/></p>
 
 __Build Modules__
@@ -182,16 +189,9 @@ __Deploy to Edge Device__
 The last step of stage 1 is to deploy the modules to the Edge device. 
 <p align="left"><img width="50%" src="./media/06_deploy.png" alt="Deploy the module"/></p>
 
-__Connect Artifacts__
+__Finish Up__
 
-Our pipeline is connected to two `Artifacts`.
-
-* [This](https://github.com/Azure-Samples/onnxruntime-iot-edge) GitHub repository and, 
-* Your Model Registry from the AzureML Workspace. Click on the drop down and select service principal you created. 
-
-You can add these by clicking the `+ Add` button, next to `Artifacts`. 
-
-The final pipeline should look like this:
+The final pipeline should look like this. If you need to edit any step, select _Edit Pipeline_ and make sure to save.:
 <p align="left"><img width="50%" src="./media/pipeline.png" alt="schematic pipeline"/></p>
 
 #### Automate re-training-to-deployment
