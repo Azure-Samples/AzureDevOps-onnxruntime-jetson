@@ -189,6 +189,9 @@ __Deploy to Edge Device__
 The last step of stage 1 is to deploy the modules to the Edge device. 
 <p align="left"><img width="50%" src="./media/06_deploy.png" alt="Deploy the module"/></p>
 
+__Add Pipeline Variables__
+Select the header _Variables_. Make sure to add all the variables referenced in the format `"$VARIABLE_NAME"` in deployment json from the previous step (__Deploy to Edge Device__). For example, `deployment-arm64.template.json` has `CONTAINER_REGISTRY_ADDRESS`, `CONTAINER_REGISTRY_PASSWORD`, `CONTAINER_USERNAME`, `MY_BLOB_STORAGE_CONNECTION_STRING`, `MY_IOTHUB_CONNECTION_STRING`, `MY_STORAGE_ACCOUNT_KEY`, and `MY_STORAGE_ACCOUNT_NAME`. The pipeline pulls in these values to populate the json during deployment. All values can be found in your Azure Portal, and select the correct ones relating to your workspace. 
+
 __Finish Up__
 
 The final pipeline should look like this. If you need to edit any step, select _Edit Pipeline_ and make sure to save.:
