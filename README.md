@@ -74,7 +74,7 @@ Install the self-hosted Azure DevOps agent onto the dev machine. Follow the inst
 
 ##### Install Azure IoT Edge Dev Tool
 
-The IoT Edge Dev Tool greatly simplifies Azure IoT Edge development down to simple commands driven by environment variables. We recommend that you install the tool manually on the ARM64: https://github.com/Azure/iotedgedev/wiki/manual-dev-machine-setup
+The IoT Edge Dev Tool greatly simplifies Azure IoT Edge development down to simple commands driven by environment variables. Setup the dev tool following this guide  https://github.com/Azure/iotedgedev/wiki/manual-dev-machine-setup. We recommend that you install the Azure CLI using the install script for the ARM64.
 
 ##### Install core AzureML SDK for Python
 
