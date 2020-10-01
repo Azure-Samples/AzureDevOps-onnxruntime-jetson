@@ -176,21 +176,21 @@ This pipeline is triggered when a new model is available in the AML Model regist
 
 __Build Modules__
 
-Next, we will rebuild the IoT modules (docker images) of our solution to update with the new ONNX model.  Make sure you point it to the correct `deployment.template.json` file, and pick the correct `Default platform`, and `Action`.
+Next, we will rebuild the IoT modules (docker images) of our solution to update with the new ONNX model.  Make sure you point it to the correct `deployment.template.json` file, and pick the correct `Default platform` (arm64v8), and `Action`.
 <p align="left"><img width="50%" src="./media/04_build_modules.png" alt="Build docker images for the application containers"/></p>
 
 __Push Modules to ACR__
 
-After the modules are created we will push them to the Azure Container Registry. You can use the Azure Container Registry that was created in your Azure ML Workspace above. As `Azure Subscription`, pick the Service connection you created above to connect to your workspace.
+After the modules are created we will push them to the Azure Container Registry. You can use the Azure Container Registry that was created in your Azure ML Workspace above. As `Azure Subscription`, pick the Service connection you created above to connect to your workspace. Fill in the same deployment template as in the step above. 
 <p align="left"><img width="50%" src="./media/05_push_modules.png" alt="Push the docker images to ACR"/></p>
 
 __Deploy to Edge Device__
 
-The last step of stage 1 is to deploy the modules to the Edge device. 
+The last step of stage 1 is to deploy the modules to the Edge device. This time the deployment file is the one found on your Jetson device (i.e. under the path `$(System.DefaultWorkingDirectory)/_Azure-Samples_onnxruntime-iot-edge/config/deployment.arm64v8.json`). The previous step creates the `config` folder on your device so you may have to locate and correct the path if the pipeline fails.
 <p align="left"><img width="50%" src="./media/06_deploy.png" alt="Deploy the module"/></p>
 
 __Add Pipeline Variables__
-Select the header _Variables_. Make sure to add all the variables referenced in the format `"$VARIABLE_NAME"` in deployment json from the previous step (__Deploy to Edge Device__). For example, `deployment-arm64.template.json` has `CONTAINER_REGISTRY_ADDRESS`, `CONTAINER_REGISTRY_PASSWORD`, `CONTAINER_USERNAME`, `MY_BLOB_STORAGE_CONNECTION_STRING`, `MY_IOTHUB_CONNECTION_STRING`, `MY_STORAGE_ACCOUNT_KEY`, and `MY_STORAGE_ACCOUNT_NAME`. The pipeline pulls in these values to populate the json during deployment. All values can be found in your Azure Portal, and select the correct ones relating to your workspace. 
+Select the header _Variables_. Make sure to add all the variables referenced in the format `"$VARIABLE_NAME"` in deployment template json from the previous steps. For example, [deployment.template.json](https://github.com/Azure-Samples/onnxruntime-iot-edge/blob/master/deployment.template.json) has `CONTAINER_REGISTRY_ADDRESS`, `CONTAINER_REGISTRY_PASSWORD`, `CONTAINER_USERNAME`, `MY_BLOB_STORAGE_CONNECTION_STRING`, `MY_IOTHUB_CONNECTION_STRING`, `MY_STORAGE_ACCOUNT_KEY`, and `MY_STORAGE_ACCOUNT_NAME`. The pipeline pulls in these values to populate the json during deployment. All values can be found in your Azure Portal, and select the correct ones relating to your workspace. 
 
 __Finish Up__
 
