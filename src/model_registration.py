@@ -22,9 +22,11 @@ ws = Workspace.create(
     auth=auth,
     subscription_id=config['subscription_id'],
     resource_group=config['resource_group'],
-    location=config['location']
+    location=config['workspace_region'],
     exist_ok=True,
     show_output=True,
 )
 
-Model.register(ws, 'models/TinyYOLO.onnx', 'TinyYOLO')
+model_name = 'TinyYOLO'
+model_path = Model.get_model_path(model_name, version=None, _workspace=ws)
+Model.register(ws, model_path, model_name)
