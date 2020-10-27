@@ -50,7 +50,7 @@ In this step we will use weights for Tiny Yolo v3 from the original release by D
 [Setup the Jupyter Notebook Environment in Azure Machine Learning Workspace](https://docs.microsoft.com/en-us/azure/machine-learning/how-to-run-jupyter-notebooks) to run your Jupyter Notebooks directly in your workspace in AML studio.
 
 [Clone this repo to your AML Workspace](https://docs.microsoft.com/en-us/azure/machine-learning/how-to-run-jupyter-notebooks#terminal) to run this training notebook.
-You can use regular `git clone --recursive https://github.com/Azure-Samples/AzureDevOps-onnxrutime-jetson` CLI commands from the Notebook Terminal in AML to clone this repository into a desired folder in your workspace.
+You can use regular `git clone --recursive https://github.com/Azure-Samples/AzureDevOps-onnxruntime-jetson` CLI commands from the Notebook Terminal in AML to clone this repository into a desired folder in your workspace.
 
 __Get Started to Train__: Open the notebook `Training-keras-yolo3-AML.ipynb` and start executing the cells to train the Tiny Yolo model. If the compute you create shows connecting for 10+ minutes, try creating a new workspace in a different region. 
 
